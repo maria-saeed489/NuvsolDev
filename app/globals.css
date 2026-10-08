@@ -1449,11 +1449,11 @@ dialog ul {
   font-size: 15px;
   line-height: 1.7;
 }
-
+/*check*/
 dialog .button {
   margin-top: 25px;
 }
-
+/*check*/
 .dialog-note {
   font-size: 13px;
   border-top: 1px solid #dce5f4;
