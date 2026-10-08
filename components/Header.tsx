@@ -6,9 +6,10 @@ import { NAV_SECTIONS } from "@/data/siteData";
 interface HeaderProps {
   currentIndex: number;
   onNavigate: (index: number) => void;
+  onOpenContact?: () => void;
 }
 
-export default function Header({ currentIndex, onNavigate }: HeaderProps) {
+export default function Header({ currentIndex, onNavigate, onOpenContact }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -43,17 +44,21 @@ export default function Header({ currentIndex, onNavigate }: HeaderProps) {
       </nav>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <a
+        <button
+          type="button"
           className="button"
-          href="#contact"
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate(5);
+          onClick={() => {
+            if (onOpenContact) {
+              onOpenContact();
+            } else {
+              onNavigate(5);
+            }
             setMobileMenuOpen(false);
           }}
+          aria-haspopup="dialog"
         >
           Let’s talk
-        </a>
+        </button>
 
         {/* Mobile menu toggle for smaller screens */}
         <button

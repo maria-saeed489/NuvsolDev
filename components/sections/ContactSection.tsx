@@ -4,7 +4,11 @@ import React from "react";
 import { CONTACT_INFO } from "@/data/siteData";
 import TiltCard from "@/components/TiltCard";
 
-export default function ContactSection() {
+interface ContactSectionProps {
+  onOpenContact?: () => void;
+}
+
+export default function ContactSection({ onOpenContact }: ContactSectionProps) {
   return (
     <section className="panel contact" id="contact" aria-labelledby="contact-heading">
       <div className="contact-grid">
@@ -20,12 +24,23 @@ export default function ContactSection() {
           <p>
             Have an operational challenge worth solving? Let’s explore what AI-native software could make possible.
           </p>
-          <a
-            className="button"
-            href={`mailto:${CONTACT_INFO.email}?subject=AI-native%20solution%20inquiry`}
-          >
-            Start a conversation
-          </a>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginBottom: "24px" }}>
+            <button
+              type="button"
+              className="button"
+              onClick={onOpenContact}
+              aria-haspopup="dialog"
+            >
+              Start a conversation (Contact Form)
+            </button>
+            <a
+              className="button outline"
+              href={`mailto:${CONTACT_INFO.email}?subject=AI-native%20solution%20inquiry`}
+              style={{ fontSize: "13px" }}
+            >
+              Email us directly
+            </a>
+          </div>
           <div className="legal">{CONTACT_INFO.legal}</div>
         </div>
 

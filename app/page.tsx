@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductModal from "@/components/ProductModal";
+import ContactModal from "@/components/ContactModal";
 import VisionSection from "@/components/sections/VisionSection";
 import AiCoreSection from "@/components/sections/AiCoreSection";
 import PortfolioSection from "@/components/sections/PortfolioSection";
@@ -17,15 +18,26 @@ export default function HomePage() {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState<boolean>(false);
 
   const journeyRef = useRef<HTMLElement>(null);
   const isNavigatingRef = useRef<boolean>(false);
   const lockTimerRef = useRef<number>(0);
 
-  const isMobile = useCallback(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 760px)").matches;
+  const [isMobileState, setIsMobileState] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 760px)");
+    const update = () => setIsMobileState(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
+
+  const isMobile = useCallback(() => {
+    return isMobileState;
+  }, [isMobileState]);
 
   const navigateTo = useCallback(
     (index: number) => {
@@ -67,7 +79,7 @@ export default function HomePage() {
     if (!journey) return;
 
     const handleWheel = (e: WheelEvent) => {
-      if (isMobile() || isModalOpen || Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.ctrlKey) {
+      if (isMobile() || isModalOpen || isContactModalOpen || Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.ctrlKey) {
         return;
       }
 
@@ -98,12 +110,12 @@ export default function HomePage() {
 
     journey.addEventListener("wheel", handleWheel, { passive: false });
     return () => journey.removeEventListener("wheel", handleWheel);
-  }, [currentIndex, isModalOpen, isMobile, navigateTo]);
+  }, [currentIndex, isModalOpen, isContactModalOpen, isMobile, navigateTo]);
 
   // Keyboard navigation (ArrowLeft & ArrowRight)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isModalOpen) return;
+      if (isModalOpen || isContactModalOpen) return;
       const target = e.target as HTMLElement;
       if (["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target?.tagName)) return;
 
@@ -118,7 +130,7 @@ export default function HomePage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentIndex, isModalOpen, navigateTo]);
+  }, [currentIndex, isModalOpen, isContactModalOpen, navigateTo]);
 
   // Scroll synchronization for desktop journey
   useEffect(() => {
@@ -167,7 +179,7 @@ export default function HomePage() {
 
     panels.forEach((p) => observer.observe(p));
     return () => observer.disconnect();
-  }, [currentIndex, isMobile]);
+  }, [currentIndex, isMobile, isMobileState]);
 
   // Hash route initialization
   useEffect(() => {
@@ -204,6 +216,29 @@ export default function HomePage() {
     };
   }, [currentIndex, isMobile]);
 
+  // When crossing the mobile/desktop boundary (rotate, resize), reset the journey position
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const journey = journeyRef.current;
+    if (!journey) return;
+
+    if (isMobileState) {
+      // Vertical mode: scroll the active panel into view
+      const panels = journey.querySelectorAll<HTMLElement>(".panel");
+      const target = panels[currentIndex];
+      if (target) {
+        target.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    } else {
+      // Horizontal mode: snap to the correct slide
+      journey.scrollTo({
+        left: currentIndex * journey.clientWidth,
+        behavior: "auto" as ScrollBehavior,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobileState]);
+
   const handleOpenProduct = (product: Product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
@@ -215,7 +250,11 @@ export default function HomePage() {
 
   return (
     <>
-      <Header currentIndex={currentIndex} onNavigate={navigateTo} />
+      <Header
+        currentIndex={currentIndex}
+        onNavigate={navigateTo}
+        onOpenContact={() => setIsContactModalOpen(true)}
+      />
 
       <main
         ref={journeyRef}
@@ -228,7 +267,7 @@ export default function HomePage() {
         <PortfolioSection onOpenProduct={handleOpenProduct} />
         <CaseStudiesSection />
         <MethodSection />
-        <ContactSection />
+        <ContactSection onOpenContact={() => setIsContactModalOpen(true)} />
       </main>
 
       <Footer currentIndex={currentIndex} onNavigate={navigateTo} />
@@ -237,6 +276,11 @@ export default function HomePage() {
         product={selectedProduct}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
       />
     </>
   );
